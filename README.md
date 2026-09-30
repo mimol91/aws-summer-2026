@@ -34,7 +34,20 @@ A request to backdate the certificate is refused cleanly.
 | Memory | **AgentCore Memory** (user preferences) scoped per signed-in citizen |
 | Observability | CloudWatch GenAI Observability traces of every tool call |
 
-Tools: `get_citizen_profile`, `list_services`, `search_service_policy`, `list_citizen_documents`, `extract_document`, `submit_application`, `check_application_status`, `notify_citizen`.
+### Available tools
+
+| Tool | Inputs | What it does |
+| --- | --- | --- |
+| `get_citizen_profile` | `citizen_id` | Returns the citizen's name, preferred language (`ar` or `en`) and contact. Called first |
+| `list_services` | none | Lists every government service with its department, required documents, fee and processing time in business days |
+| `search_service_policy` | `query` | Searches the requirements Knowledge Base for eligibility rules, linked-process ordering and rejection reasons |
+| `list_citizen_documents` | `citizen_id` | Lists the PDFs under `citizens/<id>/` in the documents bucket, including any the citizen uploaded in the chat. Returns S3 keys |
+| `extract_document` | `document_key` | Reads a PDF with Amazon Textract and returns its type, fields and validity flags (`EXPIRED`, `EXPIRES_WITHIN_30_DAYS`, `VALID`, `FRESH_PROOF_OF_ADDRESS`, `ISSUED_MORE_THAN_3_MONTHS_AGO`) |
+| `submit_application` | `citizen_id`, `service_id`, `document_keys`, `citizen_confirmed`, `notes` (optional) | Submits an application and returns the tracking id and expected completion date. Final action: refused unless `citizen_confirmed` is `true` |
+| `check_application_status` | `citizen_id` | Returns the citizen's applications with days open and whether each is overdue and needs a follow-up |
+| `notify_citizen` | `citizen_id`, `message`, `language` (optional, `ar` or `en`) | Sends a status update through SNS, translated with Amazon Translate when needed |
+
+Uploading a new document is not an agent tool. The web UI's `/upload-url` endpoint presigns an S3 upload, and the agent then reads the file with `extract_document`.
 
 ## Repository layout
 
