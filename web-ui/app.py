@@ -99,29 +99,42 @@ def sign_in(config: dict, email: str, password: str) -> bool:
     except Exception as exc:  # noqa: BLE001
         st.error(str(exc))
         return False
-    st.session_state["token"] = resp.get("AuthenticationResult", {}).get("IdToken")
+    st.session_state["token"] = resp.get("AuthenticationResult", {}).get("AccessToken")
     st.session_state["actor_id"] = email.split("@")[0]
-    st.session_state["session_id"] = str(uuid.uuid4())
+    st.session_state["session_id"] = f"web-{uuid.uuid4()}-{uuid.uuid4()}"
     return True
 
 
 def invoke_agent(config: dict, prompt: str) -> str:
-    """Invoke the deployed AgentCore Runtime.
+    """Invoke the deployed AgentCore Runtime with the signed-in user's Cognito access token.
 
-    Complete this with Kiro so it matches your runtime. Look up the current
-    AgentCore Runtime invoke API with the MCP documentation tools. The call
-    passes the prompt, the actor_id, and a stable session_id so memory works.
+    The runtime is configured with a Cognito JWT authorizer, so the call is a plain HTTPS
+    request with a Bearer token rather than a SigV4-signed SDK call.
     """
-    client = boto3.client("bedrock-agentcore", region_name=REGION)
-    payload = json.dumps({"prompt": prompt, "actor_id": st.session_state["actor_id"]}).encode("utf-8")
-    resp = client.invoke_agent_runtime(
-        agentRuntimeArn=config["runtime_arn"],
-        runtimeSessionId=st.session_state["session_id"],
-        runtimeUserId=st.session_state["actor_id"],
-        payload=payload,
+    import urllib.parse
+    import urllib.request
+
+    url = (
+        f"https://bedrock-agentcore.{REGION}.amazonaws.com/runtimes/"
+        f"{urllib.parse.quote(config['runtime_arn'], safe='')}/invocations?qualifier=DEFAULT"
     )
-    body = resp["response"].read().decode("utf-8")
-    if "text/event-stream" in resp.get("contentType", ""):
+    payload = json.dumps({"prompt": prompt, "actor_id": st.session_state["actor_id"]}).encode("utf-8")
+    req = urllib.request.Request(
+        url,
+        data=payload,
+        headers={
+            "Content-Type": "application/json",
+            "Authorization": f"Bearer {st.session_state['token']}",
+            "X-Amzn-Bedrock-AgentCore-Runtime-Session-Id": st.session_state["session_id"],
+        },
+    )
+    try:
+        with urllib.request.urlopen(req, timeout=300) as resp:
+            body = resp.read().decode("utf-8")
+            content_type = resp.headers.get("Content-Type", "")
+    except urllib.error.HTTPError as exc:
+        return f"Error {exc.code}: {exc.read().decode('utf-8', 'ignore')[:300]}"
+    if "text/event-stream" in content_type:
         return _collect_stream(body)
     try:
         return json.loads(body)

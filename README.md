@@ -27,7 +27,7 @@ A request to backdate the certificate is refused cleanly.
 
 | Layer | What we used |
 | --- | --- |
-| Interface | Shared bilingual, right-to-left Streamlit UI with Cognito sign-in (`web-ui/`) |
+| Interface | Shared bilingual, right-to-left Streamlit UI with Cognito sign-in (`web-ui/`). The runtime uses a Cognito JWT authorizer, so the UI calls it over HTTPS with the user's access token |
 | Agent | Strands Agents SDK on **AgentCore Runtime**, Claude Sonnet 4.5 on Bedrock, baseline Bedrock Guardrail on input and output |
 | Tools | Eight tools implemented once in `govease/core.py`. They run in-process in the deployed runtime, and the same code is packaged as a Lambda with a Gateway tool spec (`lambda_functions/`, `tool_specs/`), ready for **AgentCore Gateway** |
 | Data | Seeded DynamoDB tables (services, citizens, applications), documents bucket on S3, Knowledge Base on S3 Vectors, SNS status topic |

@@ -1,0 +1,1 @@
+{"customJWTAuthorizer":{"discoveryUrl":"https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Wgw1LfOYt/.well-known/openid-configuration","allowedClients":["hvj3g20bd4vcjqkpv7vj413bj","2bb7c9tfhqsuetdku8fit6s14r"]}}
