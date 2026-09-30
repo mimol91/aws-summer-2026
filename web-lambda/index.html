@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GovEase</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+  :root { --bg:#f8fafc; --card:#ffffff; --ink:#0f172a; --muted:#64748b; --accent:#4f46e5; --user:#eef2ff; --bot:#f1f5f9; }
+  * { box-sizing:border-box; }
+  body { margin:0; font-family: -apple-system, "Segoe UI", Tahoma, Arial, sans-serif; background:var(--bg); color:var(--ink); }
+  header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; background:var(--card); border-bottom:1px solid #e2e8f0; }
+  header h1 { font-size:18px; margin:0; }
+  header .actions { display:flex; gap:8px; align-items:center; }
+  button, select { font:inherit; padding:8px 12px; border-radius:8px; border:1px solid #cbd5e1; background:var(--card); cursor:pointer; }
+  button.primary { background:var(--accent); color:#fff; border-color:var(--accent); }
+  main { max-width:860px; margin:0 auto; padding:16px; }
+  .card { background:var(--card); border:1px solid #e2e8f0; border-radius:12px; padding:16px; }
+  label { display:block; font-size:14px; color:var(--muted); margin:10px 0 4px; }
+  input { width:100%; font:inherit; padding:10px; border:1px solid #cbd5e1; border-radius:8px; }
+  #chat { display:flex; flex-direction:column; gap:10px; min-height:50vh; }
+  .msg { padding:12px 14px; border-radius:12px; max-width:85%; line-height:1.5; white-space:normal; }
+  .msg.user { background:var(--user); align-self:flex-end; }
+  .msg.bot { background:var(--bot); align-self:flex-start; }
+  [dir=rtl] .msg.user { align-self:flex-start; } [dir=rtl] .msg.bot { align-self:flex-end; }
+  .tools { font-size:12px; color:var(--muted); margin-top:6px; }
+  .composer { display:flex; gap:8px; margin-top:12px; }
+  .composer input { flex:1; }
+  .err { color:#b91c1c; font-size:14px; margin-top:8px; }
+  .hint { font-size:13px; color:var(--muted); margin-top:8px; }
+  .msg p { margin:0 0 8px; } .msg ul, .msg ol { padding-inline-start:20px; margin:4px 0; }
+</style>
+</head>
+<body>
+<header>
+  <h1 id="title">GovEase</h1>
+  <div class="actions">
+    <select id="lang" aria-label="Language"><option value="en">English</option><option value="ar">العربية</option></select>
+    <button id="logout" hidden>Sign out</button>
+  </div>
+</header>
+<main>
+  <section id="login" class="card">
+    <h2 id="signin-title">Sign in</h2>
+    <label id="email-label" for="email">Email</label><input id="email" type="email" autocomplete="username">
+    <label id="pw-label" for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+    <div style="margin-top:12px"><button class="primary" id="signin">Sign in</button></div>
+    <div class="err" id="login-err"></div>
+  </section>
+  <section id="app" class="card" hidden>
+    <div id="chat" aria-live="polite"></div>
+    <form class="composer" id="form">
+      <input id="prompt" autocomplete="off" aria-label="Message">
+      <button class="primary" id="send">Send</button>
+    </form>
+    <div class="hint" id="hint"></div>
+    <div class="err" id="chat-err"></div>
+  </section>
+</main>
+<script>
+const CFG = window.GOVEASE_CONFIG;
+const T = {
+  en: { title:"GovEase - Dubai Government Services Assistant", signin:"Sign in", email:"Email", pw:"Password", send:"Send", logout:"Sign out",
+        welcome:"Hello. Tell me which government service you need and I will handle the rest. Demo citizen: CIT-03.", input:"Type your message", tools:"Tools called: ", thinking:"Working..." },
+  ar: { title:"GovEase - مساعد الخدمات الحكومية في دبي", signin:"تسجيل الدخول", email:"البريد الإلكتروني", pw:"كلمة المرور", send:"إرسال", logout:"تسجيل الخروج",
+        welcome:"مرحباً. أخبرني بالخدمة الحكومية التي تحتاجها وسأتولى الباقي. رقم المواطن التجريبي: CIT-03.", input:"اكتب رسالتك", tools:"الأدوات المستخدمة: ", thinking:"جارٍ العمل..." }
+};
+let lang = "en", token = null, actor = "user", session = null;
+function uuid() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
+function applyLang() {
+  const t = T[lang]; document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  document.getElementById("title").textContent = t.title; document.getElementById("signin-title").textContent = t.signin;
+  document.getElementById("email-label").textContent = t.email; document.getElementById("pw-label").textContent = t.pw;
+  document.getElementById("signin").textContent = t.signin; document.getElementById("send").textContent = t.send;
+  document.getElementById("logout").textContent = t.logout; document.getElementById("prompt").placeholder = t.input;
+}
+function add(role, html, tools) {
+  const d = document.createElement("div"); d.className = "msg " + role; d.innerHTML = html;
+  if (tools && tools.length) { const s = document.createElement("div"); s.className = "tools"; s.textContent = T[lang].tools + tools.join(" → "); d.appendChild(s); }
+  document.getElementById("chat").appendChild(d); d.scrollIntoView({behavior:"smooth", block:"end"}); return d;
+}
+document.getElementById("lang").onchange = e => { lang = e.target.value; applyLang(); };
+document.getElementById("signin").onclick = async () => {
+  const email = document.getElementById("email").value.trim(), pw = document.getElementById("pw").value;
+  document.getElementById("login-err").textContent = "";
+  try {
+    const r = await fetch(`https://cognito-idp.${CFG.region}.amazonaws.com/`, { method:"POST",
+      headers: {"Content-Type":"application/x-amz-json-1.1", "X-Amz-Target":"AWSCognitoIdentityProviderService.InitiateAuth"},
+      body: JSON.stringify({ AuthFlow:"USER_PASSWORD_AUTH", ClientId: CFG.clientId, AuthParameters:{ USERNAME: email, PASSWORD: pw } }) });
+    const j = await r.json();
+    if (!j.AuthenticationResult) throw new Error(j.message || "Sign-in failed");
+    token = j.AuthenticationResult.AccessToken; actor = email.split("@")[0]; session = "web-" + uuid() + "-" + uuid();
+    document.getElementById("login").hidden = true; document.getElementById("app").hidden = false; document.getElementById("logout").hidden = false;
+    add("bot", marked.parse(T[lang].welcome));
+  } catch (e) { document.getElementById("login-err").textContent = e.message; }
+};
+document.getElementById("logout").onclick = () => location.reload();
+document.getElementById("form").onsubmit = async e => {
+  e.preventDefault(); const input = document.getElementById("prompt"); const p = input.value.trim(); if (!p) return;
+  input.value = ""; add("user", marked.parseInline(p)); document.getElementById("chat-err").textContent = "";
+  const pending = add("bot", "<i>" + T[lang].thinking + "</i>"); document.getElementById("send").disabled = true;
+  try {
+    const r = await fetch("chat", { method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + token},
+      body: JSON.stringify({ prompt: p, session_id: session, actor_id: actor }) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.error || r.statusText);
+    pending.innerHTML = marked.parse(j.reply || "");
+    if (j.tools && j.tools.length) { const s = document.createElement("div"); s.className = "tools"; s.textContent = T[lang].tools + j.tools.join(" → "); pending.appendChild(s); }
+  } catch (err) { pending.remove(); document.getElementById("chat-err").textContent = err.message; }
+  document.getElementById("send").disabled = false; input.focus();
+};
+applyLang();
+</script>
+</body>
+</html>

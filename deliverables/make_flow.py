@@ -34,7 +34,7 @@ for x, t, f in cols:
 
 # column 1
 box(30, 300, 140, 70, COL["in"], ["Omar, in Arabic:", "'I moved my bakery to Al Quoz,", "my license expires soon.", "Renew it and update my address.'"])
-box(30, 170, 140, 50, COL["in"], ["Consent:", "'نعم، أؤكد'"])
+box(30, 170, 140, 50, COL["in"], ["Consent (Arabic):", "'Na'am, u'akkid'", "= Yes, I confirm"])
 
 # column 2 reasoning steps
 box(190, 400, 190, 55, COL["reason"], ["Identify linked services", "license renewal depends on", "address, tax clearance, valid ID"])

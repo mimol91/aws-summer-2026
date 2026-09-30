@@ -54,7 +54,12 @@ agents:
       signing_algorithm: ES384
       issuer_url: null
       duration_seconds: 300
-    authorizer_configuration: null
+    authorizer_configuration:
+      customJWTAuthorizer:
+        discoveryUrl: https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Wgw1LfOYt/.well-known/openid-configuration
+        allowedClients:
+        - hvj3g20bd4vcjqkpv7vj413bj
+        - 2bb7c9tfhqsuetdku8fit6s14r
     request_header_configuration: null
     oauth_configuration: null
     api_key_env_var_name: null
