@@ -1,0 +1,97 @@
+{
+  "$schema": "https://schema.agentcore.aws.dev/v1/agentcore.json",
+  "name": "GovEase",
+  "version": 1,
+  "managedBy": "CDK",
+  "tags": {
+    "agentcore:created-by": "agentcore-cli",
+    "agentcore:project-name": "GovEase"
+  },
+  "runtimes": [
+    {
+      "name": "GovEaseAgent",
+      "build": "CodeZip",
+      "entrypoint": "main.py",
+      "codeLocation": "app/GovEaseAgent/",
+      "runtimeVersion": "PYTHON_3_14",
+      "networkMode": "PUBLIC",
+      "protocol": "HTTP",
+      "envVars": [
+        {
+          "name": "GATEWAY_TOKEN_ENDPOINT",
+          "value": "https://workshop-gw-787156915839.auth.us-west-2.amazoncognito.com/oauth2/token"
+        },
+        {
+          "name": "GATEWAY_SCOPE",
+          "value": "workshop-gateway/invoke"
+        },
+        {
+          "name": "GOVEASE_TOOL_MODE",
+          "value": "auto"
+        }
+      ]
+    }
+  ],
+  "memories": [
+    {
+      "name": "govease_memory",
+      "eventExpiryDuration": 7,
+      "strategies": [
+        {
+          "type": "USER_PREFERENCE",
+          "namespaceTemplates": [
+            "/users/{actorId}/preferences"
+          ]
+        }
+      ]
+    }
+  ],
+  "knowledgeBases": [],
+  "credentials": [
+    {
+      "authorizerType": "OAuthCredentialProvider",
+      "name": "workshop-gateway-oauth",
+      "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Wgw1LfOYt/.well-known/openid-configuration",
+      "vendor": "CustomOauth2",
+      "managed": true,
+      "usage": "inbound"
+    }
+  ],
+  "evaluators": [],
+  "onlineEvalConfigs": [],
+  "agentCoreGateways": [
+    {
+      "name": "workshop-gateway",
+      "protocolType": "MCP",
+      "description": "Gateway for workshop-gateway",
+      "targets": [
+        {
+          "name": "govease",
+          "targetType": "lambdaFunctionArn",
+          "lambdaFunctionArn": {
+            "lambdaArn": "arn:aws:lambda:us-west-2:787156915839:function:workshop-govease-tools",
+            "toolSchemaFile": "tool_specs/govease.json"
+          }
+        }
+      ],
+      "authorizerType": "CUSTOM_JWT",
+      "authorizerConfiguration": {
+        "customJwtAuthorizer": {
+          "discoveryUrl": "https://cognito-idp.us-west-2.amazonaws.com/us-west-2_Wgw1LfOYt/.well-known/openid-configuration",
+          "allowedClients": [
+            "2bb7c9tfhqsuetdku8fit6s14r"
+          ]
+        }
+      },
+      "enableSemanticSearch": true,
+      "exceptionLevel": "NONE"
+    }
+  ],
+  "policyEngines": [],
+  "configBundles": [],
+  "abTests": [],
+  "harnesses": [],
+  "datasets": [],
+  "capacityProviders": [],
+  "payments": []
+}

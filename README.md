@@ -1,0 +1,82 @@
+# GovEase: one conversation instead of four government visits
+
+**Beneficiary.** Omar Haddad runs a bakery in Deira and has just moved it to Al Quoz. His trade license expires in 20 days. Last time he renewed, the application was rejected because his tax clearance certificate had quietly expired, which cost him four visits across three departments and three weeks.
+
+**Measurable claim.** GovEase turns four department visits and one rejection cycle into a single confirmed conversation. It reads Omar's documents, catches the expired certificate and the address mismatch *before* anything is filed, sequences the three linked services in the right order, and submits them with his consent. Zero wasted trips, zero rejections.
+
+Built for the Future Vision hackathon (GovEase track) on Amazon Bedrock AgentCore with Kiro.
+
+## What the agent does
+
+Given "I moved my bakery to Al Quoz and my trade license expires soon, renew it and update my address", the agent works through these steps on its own:
+
+1. Loads the citizen's profile and preferred language (Arabic for Omar).
+2. Retrieves the linked-process ordering rules and rejection reasons from the Knowledge Base.
+3. Reads every uploaded document with **Amazon Textract**: Emirates ID, trade license, Ejari tenancy contract, tax clearance certificate. Each comes back with validity flags (expired, expiring within 30 days, fresh proof of address).
+4. Finds two problems that would cause a rejection: the tax clearance expired 18 days ago, and the license still carries the Deira address.
+5. Builds the plan in dependency order: tax clearance certificate, then address change, then trade license renewal. Total 170 AED, 12 business days, inside the 20-day window.
+6. Asks for explicit consent. Submission is blocked until the citizen confirms.
+7. Submits all three applications across three departments, returns tracking ids and expected dates, and notifies Omar in Arabic through **Amazon Translate** and SNS.
+8. On later visits, checks status, flags overdue applications and recommends follow-up.
+
+A request to backdate the certificate is refused cleanly.
+
+## Architecture
+
+![Architecture](deliverables/architecture.png)
+
+| Layer | What we used |
+| --- | --- |
+| Interface | Shared bilingual, right-to-left Streamlit UI with Cognito sign-in (`web-ui/`) |
+| Agent | Strands Agents SDK on **AgentCore Runtime**, Claude Sonnet 4.5 on Bedrock, baseline Bedrock Guardrail on input and output |
+| Tools | Eight tools in one Lambda behind **AgentCore Gateway** (MCP, Cognito JWT). The same code runs in-process as a fallback (`GovEase/app/GovEaseAgent/govease/core.py`) |
+| Data | Seeded DynamoDB tables (services, citizens, applications), documents bucket on S3, Knowledge Base on S3 Vectors, SNS status topic |
+| Memory | **AgentCore Memory** (user preferences) scoped per signed-in citizen |
+| Observability | CloudWatch GenAI Observability traces of every tool call |
+
+Tools: `get_citizen_profile`, `list_services`, `search_service_policy`, `list_citizen_documents`, `extract_document`, `submit_application`, `check_application_status`, `notify_citizen`.
+
+## Repository layout
+
+```
+GovEase/                     AgentCore project (created with `agentcore create`)
+  app/GovEaseAgent/main.py   Runtime entry point: prompt, Gateway MCP client, Memory
+  app/GovEaseAgent/govease/  Tool implementations (core.py), Strands wrappers, Textract parsing
+  lambda_functions/govease/  Gateway Lambda handler (routes on bedrockAgentCoreToolName)
+  tool_specs/govease.json    Gateway tool schema
+  scripts/                   Sample document generator, seed and demo reset scripts
+  data/samples/              Synthetic Dubai-flavoured PDFs for the demo citizen
+web-ui/                      Bilingual RTL web interface pointed at the runtime
+deliverables/                Architecture diagram, deck content, demo script, next steps
+docs/                        Condensed workshop reference
+.kiro/                       Kiro steering and MCP config
+```
+
+## Run it
+
+Prerequisites: AWS credentials for the workshop account (us-west-2), AgentCore CLI, uv.
+
+```bash
+cd GovEase
+./scripts/seed_extra.sh          # uploads Omar's documents, adds the tax clearance service
+agentcore deploy                 # builds and deploys runtime, memory, gateway
+agentcore invoke --prompt "My citizen id is CIT-03. Renew my trade license and update my address."
+
+cd ../web-ui && ./run.sh         # http://localhost:8501, sign in as the demo user
+```
+
+Local development without the Gateway: `GOVEASE_TOOL_MODE=local uv run python main.py` inside `GovEase/app/GovEaseAgent` and POST to `/invocations` on port 8080.
+
+Reset the demo between takes: `GovEase/scripts/reset_demo.sh`.
+
+## What is real and what is mocked
+
+Real: Textract extraction, Knowledge Base retrieval, Bedrock model and Guardrail, AgentCore Runtime, Gateway, Memory, Translate, SNS. Mocked: departments and their submissions are rows in DynamoDB; all documents and citizens are synthetic; no real government API is called.
+
+## What we would build next
+
+See [deliverables/what-we-would-build-next.md](deliverables/what-we-would-build-next.md). In short: real DET, Ejari and FTA integrations behind the same Gateway tools, UAE Pass sign-in, proactive follow-up from Memory, a Cedar policy that makes consent unbypassable, and evaluations that score "verified before submitting" on every session.
+
+## Security notes
+
+No credentials are committed. Resource identifiers are read from SSM Parameter Store at runtime. `cognito_config.json`, `.env.local` and the `credentials` file are gitignored. Extracted document fields are returned to the agent's working context only and are not logged.

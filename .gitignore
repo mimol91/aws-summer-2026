@@ -1,0 +1,26 @@
+# secrets
+credentials
+cognito_config.json
+.env
+.env.local
+**/.env.local
+*.pem
+
+# python
+__pycache__/
+*.pyc
+.venv/
+.uv/
+*.egg-info/
+
+# agentcore / cdk build output
+cdk.out/
+**/cdk.out/
+.agentcore/
+build/
+dist/
+
+# os / editor
+.DS_Store
+.idea/
+.vscode/

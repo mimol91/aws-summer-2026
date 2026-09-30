@@ -1,0 +1,38 @@
+{
+  "idea": "GovEase",
+  "tagline": "One conversation instead of four government visits",
+  "team_name": "TEAM_NAME_TBD",
+  "members": [
+    { "name": "MEMBER_1_TBD", "org": "Wahed" }
+  ],
+  "beneficiary": "Omar Haddad, a bakery owner in Deira who moved his shop to Al Quoz. His trade license expires in 20 days, and his last renewal was rejected because a supporting certificate had quietly expired.",
+  "claim": "Turns four department visits and one rejection cycle into one confirmed conversation, and catches the rejection before submission.",
+  "what_it_does": [
+    "Reads the uploaded Emirates ID, trade license, Ejari and tax certificate with Amazon Textract",
+    "Flags the expired tax clearance and the Deira-to-Al Quoz address mismatch before anything is filed",
+    "Sequences the linked services in dependency order from the policy Knowledge Base: tax clearance, address change, license renewal",
+    "Asks for consent, then submits all three across departments and returns tracking ids and dates",
+    "Tracks status, flags overdue applications and notifies Omar in Arabic"
+  ],
+  "architecture_note": "Kiro-built Strands agent on AgentCore Runtime with Claude Sonnet 4.5 on Bedrock and the baseline Guardrail. Eight tools run as a Lambda behind AgentCore Gateway (JWT via Cognito): Textract extraction with validity flags, Knowledge Base retrieval, DynamoDB services and applications, SNS plus Amazon Translate notifications. AgentCore Memory keeps citizen preferences. Traces in CloudWatch GenAI Observability.",
+  "arch_image": "architecture.png",
+  "demo_steps": [
+    "Omar signs in to the Arabic right-to-left UI and asks to renew his license and update his address",
+    "Agent reads four documents, finds the expired tax clearance and the address mismatch",
+    "Agent proposes three services in order, 170 AED, 12 business days, and asks for consent",
+    "Omar confirms; agent submits across three departments and returns three tracking ids",
+    "Trace shows 12 autonomous tool calls; a request to backdate the certificate is refused"
+  ],
+  "impact": [
+    "Customer impact: one named business owner, zero wasted trips, rejection prevented before filing",
+    "Agentic depth: one request, 12 tool calls across Textract, Knowledge Base, DynamoDB, SNS, Translate",
+    "Regional relevance: Ejari and trade-license flow, Arabic replies, right-to-left interface",
+    "Honest limits: departments and submissions are mocked in DynamoDB; documents are synthetic"
+  ],
+  "next_steps": [
+    "UAE Pass sign-in and real DET, Ejari and FTA APIs behind the same Gateway tools",
+    "Proactive follow-up: memory-driven status checks and reminders before expiry dates",
+    "Cedar policies on the Gateway so submit_application is only allowed after a confirmation event",
+    "Evaluations that score 'verified requirements before submitting' on every session"
+  ]
+}
