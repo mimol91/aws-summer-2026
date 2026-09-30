@@ -1,0 +1,318 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GovEase</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/marked/12.0.2/marked.min.js"></script>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --ink:#1a1f2b; --muted:#6b7280; --line:#e5e7eb; --brand:#0b6b4f; --brand-2:#0f8a66; --brand-soft:#e7f4ef; --red:#c8102e; --user:#0b6b4f; --bot:#fff; --radius:16px; }
+  * { box-sizing:border-box; }
+  html, body { height:100%; }
+  body { margin:0; font-family:-apple-system, "Segoe UI", "Noto Sans Arabic", Tahoma, Arial, sans-serif; background:var(--bg); color:var(--ink); }
+  button { font:inherit; cursor:pointer; }
+  button:disabled { opacity:.5; cursor:default; }
+  [hidden] { display:none !important; }
+
+  /* top bar */
+  header { position:sticky; top:0; z-index:5; display:flex; align-items:center; justify-content:space-between; padding:10px 20px; background:rgba(255,255,255,.85); backdrop-filter:blur(8px); border-bottom:1px solid var(--line); }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:700; font-size:18px; }
+  .logo { width:34px; height:34px; border-radius:10px; background:linear-gradient(135deg,var(--brand),var(--brand-2)); color:#fff; display:grid; place-items:center; font-size:16px; }
+  .bar { display:flex; align-items:center; gap:10px; }
+  .seg { display:inline-flex; background:#eceef2; border-radius:999px; padding:3px; }
+  .seg button { border:0; background:transparent; padding:5px 14px; border-radius:999px; font-size:14px; color:var(--muted); }
+  .seg button.on { background:#fff; color:var(--ink); box-shadow:0 1px 3px rgba(0,0,0,.12); }
+  .ghost { border:1px solid var(--line); background:#fff; padding:6px 14px; border-radius:999px; font-size:14px; }
+  .ghost:hover { border-color:var(--brand); color:var(--brand); }
+  .who { font-size:14px; color:var(--muted); display:flex; align-items:center; gap:8px; }
+  .who b { color:var(--ink); }
+
+  /* login */
+  #login { max-width:420px; margin:56px auto; padding:0 16px; animation:rise .4s ease both; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:var(--radius); padding:28px; box-shadow:0 8px 30px rgba(15,23,42,.06); }
+  .card h2 { margin:0 0 4px; font-size:24px; }
+  .sub { color:var(--muted); font-size:15px; margin:0 0 20px; }
+  .eid { width:100%; display:flex; align-items:center; justify-content:center; gap:10px; padding:13px; border:0; border-radius:12px; background:#111827; color:#fff; font-weight:600; font-size:16px; transition:transform .12s, background .12s; }
+  .eid:hover { background:#000; transform:translateY(-1px); }
+  .eid .chip { width:22px; height:22px; border-radius:6px; background:#fff; color:#000; display:grid; place-items:center; font-size:10px; }
+  .or { display:flex; align-items:center; gap:12px; color:var(--muted); font-size:13px; margin:18px 0; }
+  .or::before, .or::after { content:""; flex:1; height:1px; background:var(--line); }
+  label { display:block; font-size:13px; color:var(--muted); margin:12px 0 5px; }
+  input { width:100%; font:inherit; padding:11px 12px; border:1px solid var(--line); border-radius:10px; background:#fff; color:var(--ink); transition:border-color .12s, box-shadow .12s; }
+  input:focus { outline:none; border-color:var(--brand); box-shadow:0 0 0 3px var(--brand-soft); }
+  .primary { width:100%; margin-top:16px; padding:12px; border:0; border-radius:10px; background:var(--brand); color:#fff; font-weight:600; transition:background .12s; }
+  .primary:hover:not(:disabled) { background:var(--brand-2); }
+  .err { color:#b91c1c; font-size:14px; margin-top:10px; min-height:1em; }
+
+  /* UAE PASS style sign-in (demo simulation) */
+  #uae { position:fixed; inset:0; z-index:20; background:#fff; overflow-y:auto; animation:fade .2s ease both; }
+  .uae-top { display:flex; align-items:center; justify-content:space-between; padding:14px 22px; border-bottom:1px solid var(--line); }
+  .uae-logo { display:flex; align-items:center; gap:8px; font-weight:800; font-size:20px; letter-spacing:.02em; }
+  .uae-logo i { width:30px; height:30px; border-radius:8px; background:#000; color:#fff; display:grid; place-items:center; font-style:normal; font-size:15px; }
+  .uae-logo em { font-style:normal; color:#8a8f98; font-weight:600; }
+  .uae-wrap { max-width:400px; margin:40px auto; padding:0 20px; text-align:center; }
+  .uae-wrap h3 { font-size:24px; margin:0 0 6px; } .uae-wrap p { color:var(--muted); margin:0 0 22px; font-size:15px; }
+  .uae-tabs { display:flex; border-bottom:2px solid var(--line); margin-bottom:22px; }
+  .uae-tabs span { flex:1; padding:10px 0; font-weight:600; font-size:15px; color:var(--muted); }
+  .uae-tabs span.on { color:#000; border-bottom:2px solid #000; margin-bottom:-2px; }
+  .phone { display:flex; gap:8px; text-align:start; } .phone .cc { flex:none; width:84px; text-align:center; background:#f3f4f6; }
+  .uae-btn { width:100%; margin-top:18px; padding:14px; border:0; border-radius:10px; background:#000; color:#fff; font-weight:700; font-size:16px; }
+  .uae-btn:disabled { background:#c4c7cd; opacity:1; }
+  .uae-link { margin-top:14px; border:0; background:none; color:#555; font-size:14px; text-decoration:underline; }
+  .uae-fine { margin-top:28px; font-size:12px; color:#9ca3af; }
+  .phonebox { width:120px; height:210px; margin:6px auto 18px; border:5px solid #111; border-radius:24px; position:relative; background:#f9fafb; }
+  .phonebox::before { content:""; position:absolute; top:8px; left:50%; width:34px; height:5px; margin-left:-17px; border-radius:3px; background:#111; }
+  .phonebox .ring { position:absolute; inset:50% auto auto 50%; width:46px; height:46px; margin:-23px 0 0 -23px; border-radius:50%; background:#000; color:#fff; display:grid; place-items:center; font-weight:800; font-size:12px; }
+  .phonebox .ring::after { content:""; position:absolute; inset:-8px; border:2px solid #000; border-radius:50%; animation:pulse 1.4s ease-out infinite; }
+  .code { display:inline-block; font-size:34px; font-weight:800; letter-spacing:.12em; background:#f3f4f6; padding:6px 22px; border-radius:12px; margin:4px 0 10px; }
+  .status { min-height:22px; color:#374151; font-size:15px; }
+
+  /* chat */
+  #app { display:flex; flex-direction:column; height:calc(100vh - 57px); }
+  #scroller { flex:1; overflow-y:auto; scroll-behavior:smooth; }
+  #chat { max-width:780px; margin:0 auto; padding:24px 16px 8px; display:flex; flex-direction:column; gap:14px; }
+  .hero { text-align:center; padding:36px 0 6px; animation:rise .4s ease both; }
+  .hero .logo { width:56px; height:56px; font-size:26px; border-radius:16px; margin:0 auto 14px; }
+  .hero h2 { margin:0 0 6px; font-size:26px; } .hero p { margin:0 auto; max-width:520px; color:var(--muted); }
+  .chips { display:flex; flex-wrap:wrap; gap:8px; justify-content:center; margin-top:20px; }
+  .chips button { border:1px solid var(--line); background:#fff; padding:9px 14px; border-radius:999px; font-size:14px; transition:all .12s; }
+  .chips button:hover { border-color:var(--brand); color:var(--brand); background:var(--brand-soft); transform:translateY(-1px); }
+  .row { display:flex; gap:10px; align-items:flex-start; animation:rise .25s ease both; }
+  .row.user { flex-direction:row-reverse; }
+  .av { width:32px; height:32px; border-radius:10px; display:grid; place-items:center; font-size:15px; flex:none; background:linear-gradient(135deg,var(--brand),var(--brand-2)); color:#fff; }
+  .row.user .av { background:#e5e7eb; color:#374151; }
+  .msg { padding:11px 15px; border-radius:var(--radius); line-height:1.6; max-width:82%; overflow-wrap:anywhere; }
+  .row.bot .msg { background:var(--bot); border:1px solid var(--line); border-top-left-radius:4px; }
+  .row.user .msg { background:var(--user); color:#fff; border-top-right-radius:4px; }
+  [dir=rtl] .row.bot .msg { border-top-left-radius:var(--radius); border-top-right-radius:4px; }
+  [dir=rtl] .row.user .msg { border-top-right-radius:var(--radius); border-top-left-radius:4px; }
+  .msg p { margin:0 0 8px; } .msg p:last-child { margin:0; } .msg ul, .msg ol { padding-inline-start:22px; margin:4px 0; }
+  .msg table { border-collapse:collapse; margin:6px 0; font-size:14px; } .msg td, .msg th { border:1px solid var(--line); padding:4px 8px; }
+  .msg code { background:#f1f5f9; padding:1px 5px; border-radius:5px; font-size:.92em; }
+  .tools { display:flex; flex-wrap:wrap; gap:6px; margin-top:8px; }
+  .tools span { font-size:12px; background:var(--brand-soft); color:var(--brand); padding:2px 9px; border-radius:999px; }
+  .typing { display:inline-flex; gap:4px; padding:6px 2px; } .typing i { width:7px; height:7px; border-radius:50%; background:#9ca3af; animation:bounce 1s infinite; }
+  .typing i:nth-child(2) { animation-delay:.15s; } .typing i:nth-child(3) { animation-delay:.3s; }
+  .dock { border-top:1px solid var(--line); background:rgba(255,255,255,.9); }
+  .composer { max-width:780px; margin:0 auto; padding:12px 16px 6px; display:flex; gap:8px; }
+  .composer input { flex:1; border-radius:999px; padding:12px 18px; }
+  .composer button { border:0; width:44px; height:44px; border-radius:50%; background:var(--brand); color:#fff; font-size:18px; transition:background .12s, transform .12s; }
+  .composer #attach { background:#fff; color:var(--brand); border:1px solid var(--line); }
+  .composer #cid { width:96px; border-radius:999px; padding:0 12px; text-transform:uppercase; }
+  .composer button:hover:not(:disabled) { background:var(--brand-2); transform:scale(1.05); }
+  #chat-err { max-width:780px; margin:0 auto; padding:0 20px 10px; min-height:1.4em; }
+
+  @keyframes rise { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:none; } }
+  @keyframes fade { from { opacity:0; } to { opacity:1; } }
+  @keyframes spin { to { transform:rotate(360deg); } }
+  @keyframes bounce { 0%,60%,100% { transform:translateY(0); } 30% { transform:translateY(-5px); } }
+  @keyframes pulse { from { transform:scale(.8); opacity:.8; } to { transform:scale(1.7); opacity:0; } }
+  @media (max-width:560px) { .msg { max-width:90%; } .who span { display:none; } }
+</style>
+</head>
+<body>
+<header>
+  <div class="brand"><div class="logo">&#127963;</div><span id="title">GovEase</span></div>
+  <div class="bar">
+    <div class="who" id="who" hidden><span id="who-name"></span></div>
+    <div class="seg" role="group" aria-label="Language"><button id="lang-en" class="on">EN</button><button id="lang-ar">عربي</button></div>
+    <button class="ghost" id="logout" hidden>Sign out</button>
+  </div>
+</header>
+
+<section id="login">
+  <div class="card">
+    <h2 id="signin-title">Sign in</h2>
+    <p class="sub" id="signin-sub"></p>
+    <button class="eid" id="eid-btn"><span class="chip">&#9679;</span><span id="eid-label">Sign in with UAE PASS</span></button>
+    <div class="or" id="or"><span id="or-label">or</span></div>
+    <label id="email-label" for="email">Email</label><input id="email" type="email" autocomplete="username">
+    <label id="pw-label" for="pw">Password</label><input id="pw" type="password" autocomplete="current-password">
+    <button class="primary" id="signin">Sign in</button>
+    <div class="err" id="login-err"></div>
+  </div>
+</section>
+
+<div id="uae" hidden>
+  <div class="uae-top"><div class="uae-logo"><i>&#9679;</i>UAE <em>PASS</em></div><button class="ghost" id="uae-close">Cancel</button></div>
+  <div class="uae-wrap" id="uae-phone">
+    <h3 id="u-title">Sign in with UAE PASS</h3><p id="u-sub">Enter your mobile number registered with UAE PASS.</p>
+    <div class="uae-tabs"><span class="on" id="u-tab1">Mobile number</span><span id="u-tab2">Emirates ID</span></div>
+    <div class="phone"><input class="cc" value="+971" readonly aria-label="Country code"><input id="u-phone" type="tel" inputmode="tel" placeholder="5X XXX XXXX" autocomplete="tel-national"></div>
+    <button class="uae-btn" id="u-go" disabled>Continue</button>
+    <div class="err" id="u-err"></div>
+    <div class="uae-fine" id="u-fine">Demo simulation. This is not the real UAE PASS.</div>
+  </div>
+  <div class="uae-wrap" id="uae-wait" hidden>
+    <div class="phonebox"><div class="ring">UAE</div></div>
+    <h3 id="w-title">Check your UAE PASS app</h3><p id="w-sub">Approve the request and confirm this code matches.</p>
+    <div class="code" id="w-code">00</div>
+    <div class="status" id="w-status"></div>
+    <button class="uae-link" id="w-cancel">Cancel</button>
+  </div>
+</div>
+
+<section id="app" hidden>
+  <div id="scroller"><div id="chat" aria-live="polite"></div></div>
+  <div class="dock">
+    <form class="composer" id="form">
+      <button type="button" id="attach" aria-label="Attach PDF">&#128206;</button>
+      <input id="cid" value="CIT-03" aria-label="Citizen ID" maxlength="10">
+      <input type="file" id="file" accept="application/pdf,.pdf" multiple hidden>
+      <input id="prompt" autocomplete="off" aria-label="Message">
+      <button id="send" aria-label="Send">&#10148;</button>
+    </form>
+    <div class="err" id="chat-err"></div>
+  </div>
+</section>
+
+<script>
+const CFG = window.GOVEASE_CONFIG;
+const T = {
+  en: { title:"GovEase", signin:"Sign in", sub:"Dubai government services, in one conversation.", email:"Email", pw:"Password", logout:"Sign out", or:"or", eid:"Sign in with UAE PASS",
+        heroT:"How can I help today?", heroP:"Tell me which government service you need and I will handle the rest. Demo citizen: CIT-03.",
+        input:"Type your message", attach:"Attach PDF", tooBig:"PDF must be 5 MB or smaller", uploaded:"I uploaded new documents: ", tools:"Used", thinking:"Working...", cancel:"Cancel",
+        uae:{title:"Sign in with UAE PASS",sub:"Enter your mobile number registered with UAE PASS.",tab1:"Mobile number",tab2:"Emirates ID",go:"Continue",fine:"Demo simulation. This is not the real UAE PASS.",wt:"Check your UAE PASS app",ws:"Approve the request and confirm this code matches.",s1:"Waiting for approval...",s2:"Approved. Signing you in...",bad:"Enter a valid mobile number"},
+        chips:["Renew my trade license","What documents do I need?","Check my application status","What are the renewal fees?"] },
+  ar: { title:"GovEase", signin:"تسجيل الدخول", sub:"خدمات حكومة دبي في محادثة واحدة.", email:"البريد الإلكتروني", pw:"كلمة المرور", logout:"تسجيل الخروج", or:"أو", eid:"الدخول بالهوية الرقمية UAE PASS",
+        heroT:"كيف يمكنني مساعدتك اليوم؟", heroP:"أخبرني بالخدمة الحكومية التي تحتاجها وسأتولى الباقي. رقم المواطن التجريبي: CIT-03.",
+        input:"اكتب رسالتك", attach:"إرفاق ملف PDF", tooBig:"يجب ألا يتجاوز حجم الملف 5 ميجابايت", uploaded:"لقد رفعت مستندات جديدة: ", tools:"استخدم", thinking:"جارٍ العمل...", cancel:"إلغاء",
+        uae:{title:"الدخول عبر الهوية الرقمية UAE PASS",sub:"أدخل رقم هاتفك المسجل في UAE PASS.",tab1:"رقم الجوال",tab2:"الهوية الإماراتية",go:"متابعة",fine:"محاكاة تجريبية. هذه ليست خدمة UAE PASS الحقيقية.",wt:"تحقق من تطبيق UAE PASS",ws:"وافق على الطلب وتأكد من تطابق الرمز.",s1:"في انتظار الموافقة...",s2:"تمت الموافقة. جارٍ تسجيل دخولك...",bad:"أدخل رقم جوال صحيحاً"},
+        chips:["جدد رخصتي التجارية","ما المستندات المطلوبة؟","تحقق من حالة طلبي","ما هي رسوم التجديد؟"] }
+};
+const $ = id => document.getElementById(id);
+let lang = "en", token = null, actor = "user", session = null, displayName = "", busy = false;
+
+function uuid() { return ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g, c => (c ^ crypto.getRandomValues(new Uint8Array(1))[0] & 15 >> c / 4).toString(16)); }
+function applyLang() {
+  const t = T[lang]; document.documentElement.lang = lang; document.documentElement.dir = lang === "ar" ? "rtl" : "ltr";
+  $("lang-en").classList.toggle("on", lang === "en"); $("lang-ar").classList.toggle("on", lang === "ar");
+  $("title").textContent = t.title; $("signin-title").textContent = t.signin; $("signin-sub").textContent = t.sub;
+  $("email-label").textContent = t.email; $("pw-label").textContent = t.pw; $("signin").textContent = t.signin;
+  $("logout").textContent = t.logout; $("prompt").placeholder = t.input; $("or-label").textContent = t.or;
+  $("eid-label").textContent = t.eid; const u = t.uae;
+  $("u-title").textContent = u.title; $("u-sub").textContent = u.sub; $("u-tab1").textContent = u.tab1; $("u-tab2").textContent = u.tab2;
+  $("u-go").textContent = u.go; $("u-fine").textContent = u.fine; $("w-title").textContent = u.wt; $("w-sub").textContent = u.ws; $("w-cancel").textContent = t.cancel; $("uae-close").textContent = t.cancel;
+  $("attach").title = t.attach; $("attach").setAttribute("aria-label", t.attach);
+  const hero = $("hero"); if (hero) renderHero(hero);
+}
+function scrollDown() { const s = $("scroller"); s.scrollTop = s.scrollHeight; }
+function addRow(role, html) {
+  const r = document.createElement("div"); r.className = "row " + role;
+  r.innerHTML = '<div class="av">' + (role === "bot" ? "&#127963;" : "&#128100;") + '</div><div class="msg"></div>';
+  r.querySelector(".msg").innerHTML = html; $("chat").appendChild(r); scrollDown(); return r.querySelector(".msg");
+}
+function showTools(msg, tools) {
+  if (!tools || !tools.length) return;
+  const d = document.createElement("div"); d.className = "tools";
+  tools.forEach(n => { const s = document.createElement("span"); s.textContent = T[lang].tools + " " + n; d.appendChild(s); });
+  msg.appendChild(d);
+}
+function renderHero(el) {
+  const t = T[lang];
+  el.innerHTML = '<div class="logo">&#127963;</div><h2></h2><p></p><div class="chips"></div>';
+  el.querySelector("h2").textContent = t.heroT; el.querySelector("p").textContent = t.heroP;
+  t.chips.forEach(c => { const b = document.createElement("button"); b.textContent = c; b.onclick = () => send(c); el.querySelector(".chips").appendChild(b); });
+}
+function enterApp(name) {
+  displayName = name; $("login").hidden = true; $("app").hidden = false; $("logout").hidden = false;
+  $("who").hidden = false; $("who-name").innerHTML = "&#128100; <b></b>"; $("who-name").querySelector("b").textContent = name;
+  session = "web-" + uuid() + "-" + uuid();
+  const hero = document.createElement("div"); hero.className = "hero"; hero.id = "hero"; renderHero(hero); $("chat").appendChild(hero);
+  $("prompt").focus();
+}
+
+async function passwordSignIn() {
+  const email = $("email").value.trim(), pw = $("pw").value; $("login-err").textContent = "";
+  if (!email || !pw) return;
+  $("signin").disabled = true;
+  try {
+    const r = await fetch(`https://cognito-idp.${CFG.region}.amazonaws.com/`, { method:"POST",
+      headers: {"Content-Type":"application/x-amz-json-1.1", "X-Amz-Target":"AWSCognitoIdentityProviderService.InitiateAuth"},
+      body: JSON.stringify({ AuthFlow:"USER_PASSWORD_AUTH", ClientId: CFG.clientId, AuthParameters:{ USERNAME: email, PASSWORD: pw } }) });
+    const j = await r.json();
+    if (!j.AuthenticationResult) throw new Error(j.message || "Sign-in failed");
+    token = j.AuthenticationResult.AccessToken; actor = email.split("@")[0]; enterApp(email);
+  } catch (e) { $("login-err").textContent = e.message; }
+  $("signin").disabled = false;
+}
+
+// Simulated UAE PASS sign-in: phone entry, a scripted "approve in the app" step, then the server creates/reuses a Cognito user for that number.
+const wait = ms => new Promise(r => setTimeout(r, ms));
+let uaeCancelled = false;
+function openUae() {
+  uaeCancelled = false; $("login-err").textContent = ""; $("u-err").textContent = ""; $("u-phone").value = ""; $("u-go").disabled = true;
+  $("uae-phone").hidden = false; $("uae-wait").hidden = true; $("uae").hidden = false; $("u-phone").focus();
+}
+function closeUae() { uaeCancelled = true; $("uae").hidden = true; }
+async function uaeContinue() {
+  const digits = $("u-phone").value.replace(/\D/g, ""); const u = T[lang].uae;
+  if (digits.length < 8) { $("u-err").textContent = u.bad; return; }
+  const phone = "971" + digits.replace(/^971/, "").replace(/^0/, "");
+  uaeCancelled = false; $("uae-phone").hidden = true; $("uae-wait").hidden = false;
+  $("w-code").textContent = String(10 + Math.floor(Math.random() * 90)); $("w-status").textContent = u.s1;
+  const login = fetch("uaepass", { method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({ phone }) }).then(async r => { const j = await r.json(); if (!r.ok) throw new Error(j.error || r.statusText); return j; });
+  login.catch(() => {});
+  await wait(2800);
+  if (uaeCancelled) return;
+  $("w-status").textContent = u.s2;
+  try {
+    const j = await login; if (uaeCancelled) return; await wait(700);
+    token = j.token; actor = j.actor; closeUae(); enterApp("+" + phone);
+  } catch (e) { closeUae(); $("login-err").textContent = e.message; }
+}
+
+async function send(text) {
+  const p = (text || "").trim(); if (!p || busy) return;
+  busy = true; $("prompt").value = ""; $("chat-err").textContent = ""; $("send").disabled = true;
+  const hero = $("hero"); if (hero) hero.remove();
+  addRow("user", marked.parseInline(p));
+  const pending = addRow("bot", '<span class="typing"><i></i><i></i><i></i></span>');
+  try {
+    const r = await fetch("chat", { method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + token},
+      body: JSON.stringify({ prompt: p, session_id: session, actor_id: actor }) });
+    const j = await r.json(); if (!r.ok) throw new Error(j.error || r.statusText);
+    pending.innerHTML = marked.parse(j.reply || ""); showTools(pending, j.tools); scrollDown();
+  } catch (err) { pending.closest(".row").remove(); $("chat-err").textContent = err.message; }
+  busy = false; $("send").disabled = false; $("prompt").focus();
+}
+
+// Upload straight to S3 with a presigned URL, then tell the agent which key to extract.
+async function uploadOne(file) {
+  const r = await fetch("upload-url", { method:"POST", headers:{"Content-Type":"application/json", "Authorization":"Bearer " + token},
+    body: JSON.stringify({ filename: file.name, citizen_id: $("cid").value }) });
+  const j = await r.json(); if (!r.ok) throw new Error(j.error || r.statusText);
+  const put = await fetch(j.url, { method:"PUT", headers:{"Content-Type":"application/pdf"}, body:file });
+  if (!put.ok) throw new Error(file.name + ": upload failed (" + put.status + ")");
+  return j.key;
+}
+
+async function uploadFiles(files) {
+  if (!files.length || busy) return;
+  if (files.some(f => f.size > 5 * 1024 * 1024)) { $("chat-err").textContent = T[lang].tooBig; return; }
+  $("chat-err").textContent = ""; $("attach").disabled = true;
+  try {
+    const keys = await Promise.all(files.map(uploadOne));
+    $("attach").disabled = false;
+    await send(T[lang].uploaded + keys.join(", "));
+  } catch (err) { $("chat-err").textContent = err.message; }
+  $("attach").disabled = false; $("file").value = "";
+}
+
+$("attach").onclick = () => $("file").click();
+$("file").onchange = () => uploadFiles([...$("file").files]);
+$("lang-en").onclick = () => { lang = "en"; applyLang(); };
+$("lang-ar").onclick = () => { lang = "ar"; applyLang(); };
+$("signin").onclick = passwordSignIn;
+$("pw").onkeydown = e => { if (e.key === "Enter") passwordSignIn(); };
+$("eid-btn").onclick = openUae;
+$("uae-close").onclick = closeUae; $("w-cancel").onclick = closeUae;
+$("u-phone").oninput = () => { $("u-err").textContent = ""; $("u-go").disabled = $("u-phone").value.replace(/\D/g, "").length < 8; };
+$("u-phone").onkeydown = e => { if (e.key === "Enter" && !$("u-go").disabled) uaeContinue(); };
+$("u-go").onclick = uaeContinue;
+$("logout").onclick = () => location.reload();
+$("form").onsubmit = e => { e.preventDefault(); send($("prompt").value); };
+applyLang();
+</script>
+</body>
+</html>
