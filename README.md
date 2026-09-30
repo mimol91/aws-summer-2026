@@ -29,7 +29,7 @@ A request to backdate the certificate is refused cleanly.
 | --- | --- |
 | Interface | Shared bilingual, right-to-left Streamlit UI with Cognito sign-in (`web-ui/`) |
 | Agent | Strands Agents SDK on **AgentCore Runtime**, Claude Sonnet 4.5 on Bedrock, baseline Bedrock Guardrail on input and output |
-| Tools | Eight tools in one Lambda behind **AgentCore Gateway** (MCP, Cognito JWT). The same code runs in-process as a fallback (`GovEase/app/GovEaseAgent/govease/core.py`) |
+| Tools | Eight tools implemented once in `govease/core.py`. They run in-process in the deployed runtime, and the same code is packaged as a Lambda with a Gateway tool spec (`lambda_functions/`, `tool_specs/`), ready for **AgentCore Gateway** |
 | Data | Seeded DynamoDB tables (services, citizens, applications), documents bucket on S3, Knowledge Base on S3 Vectors, SNS status topic |
 | Memory | **AgentCore Memory** (user preferences) scoped per signed-in citizen |
 | Observability | CloudWatch GenAI Observability traces of every tool call |
@@ -59,8 +59,10 @@ Prerequisites: AWS credentials for the workshop account (us-west-2), AgentCore C
 ```bash
 cd GovEase
 ./scripts/seed_extra.sh          # uploads Omar's documents, adds the tax clearance service
-agentcore deploy                 # builds and deploys runtime, memory, gateway
-agentcore invoke --prompt "My citizen id is CIT-03. Renew my trade license and update my address."
+cd app/GovEaseAgent
+uvx --from bedrock-agentcore-starter-toolkit agentcore deploy \
+  --env AGENTCORE_MEMORY_ID=<memory id> --env GOVEASE_TOOL_MODE=local
+uvx --from bedrock-agentcore-starter-toolkit agentcore invoke '{"prompt": "My citizen id is CIT-03. Renew my trade license and update my address."}'
 
 cd ../web-ui && ./run.sh         # http://localhost:8501, sign in as the demo user
 ```
@@ -71,7 +73,9 @@ Reset the demo between takes: `GovEase/scripts/reset_demo.sh`.
 
 ## What is real and what is mocked
 
-Real: Textract extraction, Knowledge Base retrieval, Bedrock model and Guardrail, AgentCore Runtime, Gateway, Memory, Translate, SNS. Mocked: departments and their submissions are rows in DynamoDB; all documents and citizens are synthetic; no real government API is called.
+Real: Textract extraction, Knowledge Base retrieval, Bedrock model and Guardrail, AgentCore Runtime, Memory, Translate, SNS. Mocked: departments and their submissions are rows in DynamoDB; all documents and citizens are synthetic; no real government API is called.
+
+Deployment note: the workshop participant role cannot create the IAM roles that CDK bootstrap needs and is denied `bedrock-agentcore:CreateGateway`, so the runtime was deployed with the AgentCore starter toolkit (CodeBuild container build) and the tools run in-process. The Gateway Lambda (`workshop-govease-tools`) is deployed and tested directly; the agent switches to it automatically when a Gateway URL is present in its environment (`GOVEASE_TOOL_MODE=auto`).
 
 ## What we would build next
 

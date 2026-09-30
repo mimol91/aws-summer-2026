@@ -49,16 +49,21 @@ PROJECT = os.path.join(HERE, "..", "GovEase")
 
 def _runtime_arn_from_project() -> str:
     """Read the deployed runtime ARN written by `agentcore deploy` so nothing is hardcoded."""
-    path = os.path.join(PROJECT, "agentcore", ".cli", "deployed-state.json")
-    if not os.path.exists(path):
-        return ""
-    with open(path, "r", encoding="utf-8") as handle:
-        state = json.load(handle)
-    text = json.dumps(state)
-    # Any runtime ARN in the deployed state belongs to this single-runtime project.
     import re
-    match = re.search(r"arn:aws:bedrock-agentcore:[^\"]+:runtime/[^\"]+", text)
-    return match.group(0) if match else ""
+    # The AgentCore starter toolkit writes .bedrock_agentcore.yaml; the Node CLI writes deployed-state.json.
+    candidates = [
+        os.path.join(PROJECT, "app", "GovEaseAgent", ".bedrock_agentcore.yaml"),
+        os.path.join(PROJECT, "agentcore", ".cli", "deployed-state.json"),
+    ]
+    for path in candidates:
+        if not os.path.exists(path):
+            continue
+        with open(path, "r", encoding="utf-8") as handle:
+            text = handle.read()
+        match = re.search(r"arn:aws:bedrock-agentcore:[^\s\"']+:runtime/[^\s\"']+", text)
+        if match:
+            return match.group(0)
+    return ""
 
 
 def load_config() -> dict:

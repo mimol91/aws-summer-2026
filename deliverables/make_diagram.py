@@ -22,8 +22,8 @@ NODES = {
     "runtime": (320, 280, 160, 100, BOX, ["AgentCore Runtime", "Strands agent", "8-step workflow,", "consent gate"]),
     "model": (320, 440, 160, 60, BOX, ["Amazon Bedrock", "Claude Sonnet 4.5 + Guardrail"]),
     "memory": (320, 160, 160, 60, BOX, ["AgentCore Memory", "citizen preferences"]),
-    "gateway": (510, 280, 140, 100, BOX, ["AgentCore Gateway", "MCP, Cognito JWT", "8 tools"]),
-    "lambda": (680, 280, 145, 100, BOX2, ["Lambda tools", "extract_document", "submit_application", "check_status, notify..."]),
+    "gateway": (510, 280, 140, 100, BOX, ["AgentCore Gateway*", "MCP, Cognito JWT", "tool spec ready"]),
+    "lambda": (680, 280, 145, 100, BOX2, ["Tools (in-process + Lambda)", "extract_document", "submit_application", "check_status, notify..."]),
     "textract": (680, 440, 145, 50, BOX2, ["Amazon Textract", "reads ID, license, Ejari"]),
     "kb": (680, 160, 145, 50, BOX2, ["Knowledge Base", "requirements, linked processes"]),
     "ddb": (680, 90, 145, 50, BOX2, ["DynamoDB", "services, citizens, applications"]),
@@ -82,6 +82,7 @@ def draw(c: canvas.Canvas):
             c.setFont("Helvetica-Bold" if i == 0 else "Helvetica", 9 if i == 0 else 8)
             c.drawCentredString(x + w / 2, y + h - 14 - i * 11, t)
     c.setFont("Helvetica", 8); c.setFillColor(GREY)
+    c.drawString(30, 32, "* Gateway creation is denied to the workshop participant role, so the deployed runtime calls the same tool code in-process; the Lambda target and tool spec are deployed and tested.")
     c.drawString(30, 20, "Real: Textract, Knowledge Base, Bedrock + Guardrail, Runtime, Gateway, Memory, Translate, SNS.  Mocked: departments and submissions are DynamoDB rows; documents and citizens are synthetic.")
 
 

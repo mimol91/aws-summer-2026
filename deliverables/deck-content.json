@@ -3,7 +3,10 @@
   "tagline": "One conversation instead of four government visits",
   "team_name": "TEAM_NAME_TBD",
   "members": [
-    { "name": "MEMBER_1_TBD", "org": "Wahed" }
+    {
+      "name": "MEMBER_1_TBD",
+      "org": "Wahed"
+    }
   ],
   "beneficiary": "Omar Haddad, a bakery owner in Deira who moved his shop to Al Quoz. His trade license expires in 20 days, and his last renewal was rejected because a supporting certificate had quietly expired.",
   "claim": "Turns four department visits and one rejection cycle into one confirmed conversation, and catches the rejection before submission.",
@@ -14,7 +17,7 @@
     "Asks for consent, then submits all three across departments and returns tracking ids and dates",
     "Tracks status, flags overdue applications and notifies Omar in Arabic"
   ],
-  "architecture_note": "Kiro-built Strands agent on AgentCore Runtime with Claude Sonnet 4.5 on Bedrock and the baseline Guardrail. Eight tools run as a Lambda behind AgentCore Gateway (JWT via Cognito): Textract extraction with validity flags, Knowledge Base retrieval, DynamoDB services and applications, SNS plus Amazon Translate notifications. AgentCore Memory keeps citizen preferences. Traces in CloudWatch GenAI Observability.",
+  "architecture_note": "Kiro-built Strands agent on AgentCore Runtime with Claude Sonnet 4.5 on Bedrock and the baseline Guardrail. Eight tools: Textract extraction with validity flags, Knowledge Base retrieval, DynamoDB services and applications, SNS plus Amazon Translate notifications; packaged both in-process and as a Gateway-ready Lambda. AgentCore Memory keeps citizen preferences. Traces in CloudWatch GenAI Observability.",
   "arch_image": "architecture.png",
   "demo_steps": [
     "Omar signs in to the Arabic right-to-left UI and asks to renew his license and update his address",
@@ -27,7 +30,7 @@
     "Customer impact: one named business owner, zero wasted trips, rejection prevented before filing",
     "Agentic depth: one request, 12 tool calls across Textract, Knowledge Base, DynamoDB, SNS, Translate",
     "Regional relevance: Ejari and trade-license flow, Arabic replies, right-to-left interface",
-    "Honest limits: departments and submissions are mocked in DynamoDB; documents are synthetic"
+    "Honest limits: departments are mocked in DynamoDB, documents are synthetic, Gateway creation is denied in the workshop account so tools run in-process"
   ],
   "next_steps": [
     "UAE Pass sign-in and real DET, Ejari and FTA APIs behind the same Gateway tools",
